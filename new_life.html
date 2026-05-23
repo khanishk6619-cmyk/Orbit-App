@@ -2333,6 +2333,34 @@ RULES:
 
       const tabs = [{ id:"log",label:"Log",emoji:"➕"},{ id:"history",label:"History",emoji:"📋"},{ id:"stats",label:"Stats",emoji:"📊"}];
 
+      const noDevice = !state.user?.device || state.user.device === "No, I don't have one";
+      if (noDevice) return (
+        <Screen>
+          <div style={{ padding:"56px 20px 20px" }}>
+            <h1 style={{ fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,color:C.text,marginBottom:20 }}>Workouts 🏋️</h1>
+            <Card style={{ textAlign:"center",padding:"36px 24px",marginBottom:16 }}>
+              <div style={{ fontSize:56,marginBottom:16 }}>🔒</div>
+              <div style={{ fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:800,color:C.text,marginBottom:8 }}>Workout Tracking Locked</div>
+              <div style={{ fontSize:13,color:C.textMuted,lineHeight:1.6,marginBottom:24 }}>Accurate workout data — heart rate zones, calories burned, and recovery metrics — sync from your wearable. Connect a device to unlock full tracking.</div>
+              <div style={{ fontSize:12,color:C.textMuted,marginBottom:14 }}>Supported devices:</div>
+              <div style={{ display:"flex",justifyContent:"center",gap:10,flexWrap:"wrap",marginBottom:24 }}>
+                {["⌚ Apple Watch","💪 Whoop","⌚ Fitbit","⌚ Garmin"].map(d => (
+                  <span key={d} style={{ fontSize:12,background:C.surface,border:`1px solid ${C.border}`,borderRadius:20,padding:"6px 14px",color:C.textMuted }}>{d}</span>
+                ))}
+              </div>
+              <button className="btn-press" onClick={() => state.setScreen("progress")}
+                style={{ width:"100%",padding:"14px",background:C.grad,border:"none",borderRadius:14,color:"#fff",fontFamily:"'Syne',sans-serif",fontSize:14,fontWeight:700,cursor:"pointer" }}>
+                Set Up Device in Profile →
+              </button>
+            </Card>
+            <Card style={{ background:"rgba(255,140,66,0.04)",borderColor:"rgba(255,140,66,0.2)" }}>
+              <div style={{ fontSize:12,color:C.textMuted,marginBottom:4 }}>No device?</div>
+              <div style={{ fontSize:13,color:C.text,lineHeight:1.5 }}>A native Orbit app with real Apple Watch, Whoop & Garmin sync is coming soon. For now, connect a wearable to track workouts accurately.</div>
+            </Card>
+          </div>
+        </Screen>
+      );
+
       return (
         <Screen>
           <div style={{ padding:"56px 20px 20px" }}>
