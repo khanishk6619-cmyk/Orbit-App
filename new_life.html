@@ -800,12 +800,125 @@
           ]);
         }
 
-        // ── GENERAL FALLBACK — different every time ────────────────────────────
+        // ── NUTRITION & DIET ADVICE ───────────────────────────────────────────
+        if (/protein|carb|fat|macro|calorie|nutrition|diet|keto|vegan|intermittent|fasting|lose weight|gain weight|bulk|cut|deficit|surplus/i.test(t)) {
+          return pick([
+            `🥗 Great question! For most people: aim for ~0.8–1g of protein per lb of bodyweight, fill the rest with complex carbs and healthy fats. Log your meals here and I'll track your macros automatically.`,
+            `🍗 Protein is king for body composition — chicken, eggs, Greek yogurt, lentils. Pair with complex carbs (oats, rice, sweet potato) and you've got a solid base. Want me to log something you just ate?`,
+            `⚖️ Weight loss = calorie deficit. Weight gain = surplus. Your goal: ${state.calorieGoal} kcal/day. You've had ${state.meals.reduce((s,m)=>s+m.calories,0)} kcal so far today. Tell me what you eat and I'll track everything.`,
+            `🥑 Healthy fats (avocado, olive oil, nuts) keep you full and support hormones. Don't fear them — just keep portions sensible. What are you trying to achieve — lose, gain, or maintain?`,
+          ]);
+        }
+
+        // ── FITNESS & EXERCISE SCIENCE ────────────────────────────────────────
+        if (/how (many|much|often|long)|rep|set|volume|progressive overload|muscle|strength|cardio|hiit|zone 2|vo2|recovery|rest day|soreness|doms/i.test(t)) {
+          return pick([
+            `💪 For muscle growth: 3–5 sets of 6–12 reps per exercise, progressive overload every week (add weight or reps). Train each muscle 2x/week minimum. Log your workouts in the Workout tab to track progress.`,
+            `🏃 Cardio: Zone 2 (conversational pace, 30–60 min) is best for heart health and fat burn. HIIT (20–30 min) for efficiency. Mix both. Aim for 150 min of moderate activity per week.`,
+            `😴 Rest days are when you actually grow — muscles repair during sleep, not during the workout. If you're sore, light walking or stretching is fine. You don't need to go hard every day.`,
+            `📈 Progressive overload is the #1 principle in fitness. If you're not adding more weight, reps, or sets over time, you're not growing. Track every session in Workout so I can spot your trends.`,
+          ]);
+        }
+
+        // ── SLEEP SCIENCE ─────────────────────────────────────────────────────
+        if (/how (to|do i|can i) sleep|sleep better|fall asleep|wake up tired|groggy|sleep hygiene|melatonin|circadian|rem|deep sleep|sleep stage/i.test(t)) {
+          return pick([
+            `😴 Top sleep hacks: same wake time every day (even weekends), no screens 30 min before bed, keep room cool (65–68°F/18–20°C), and no caffeine after 2pm. These 4 alone will transform your sleep.`,
+            `🌙 Your circadian rhythm is driven by light. Get bright light first thing in the morning, dim lights after sunset. This single habit syncs your body clock better than any supplement.`,
+            `🧘 Can't fall asleep? Try 4-7-8 breathing: inhale 4s, hold 7s, exhale 8s. Repeat 4 times. It activates your parasympathetic nervous system and drops heart rate fast.`,
+            `☕ Caffeine has a 5–6 hour half-life. A coffee at 3pm still has half its caffeine at 9pm. Cut off by 1–2pm if you struggle to fall asleep. Your ${state.sleepLogs.length > 0 ? `last logged sleep was ${state.sleepLogs[0].duration}h` : "sleep log is empty — start tracking in the Sleep tab"}.`,
+          ]);
+        }
+
+        // ── MENTAL HEALTH & MINDFULNESS ───────────────────────────────────────
+        if (/meditat|mindful|mental health|therapy|therapist|counsell|burnout|overthink|ruminate|intrusive|trauma|self.esteem|confidence|loneli|isolat|depress|bipolar|adhd|ocd/i.test(t)) {
+          return pick([
+            `🧘 Meditation doesn't have to be 30 mins of silence. Even 5 minutes of focused breathing rewires your stress response over time. Start with the breathing exercise in Health → Stress. Consistency beats intensity.`,
+            `💙 Therapy is one of the best investments you can make — no different to hiring a personal trainer, but for your mind. If it's not accessible right now, journaling daily is the next best thing. Try the Journal tab.`,
+            `🧠 Overthinking is your brain trying to solve problems that don't exist yet. When it happens: write down the thought (Journal tab), then ask yourself "is this happening right now?" Most answers are no.`,
+            `🌱 Mental health is physical health. Sleep, exercise, and diet affect your mood more than most people realise. Your Orbit Score tracks all three — keep those up and your baseline happiness rises with them.`,
+          ]);
+        }
+
+        // ── PRODUCTIVITY & FOCUS ──────────────────────────────────────────────
+        if (/focus|concentrat|distract|procrastinat|pomodoro|deep work|time block|priorit|productive|get things done|gtd|todo|task manage|overwhelm.*task|too much to do/i.test(t)) {
+          return pick([
+            `⚡ Pomodoro technique: 25 min deep work, 5 min break, repeat. After 4 rounds, take a 20 min break. Use the Focus timer in Tasks → Focus right now. Your brain can't sustain focus for hours — stop trying to.`,
+            `🎯 You can only truly focus on ONE thing at a time. Multitasking is a myth — it's just rapid task switching that degrades quality. Pick your #1 task for today. Right now. Everything else waits.`,
+            `📋 If you have more than 3 priorities, you have no priorities. Look at your ${state.tasks.length} tasks — what's the ONE that moves the needle most? Start there. I've added it to your priority matrix.`,
+            `🧠 Decision fatigue is real. Make big decisions in the morning when willpower is highest. Automate small ones (same breakfast, same workout time). Save your mental energy for what matters.`,
+          ]);
+        }
+
+        // ── RELATIONSHIPS & SOCIAL ────────────────────────────────────────────
+        if (/friend|relationship|partner|family|loneli|social|communication|conflict|argument|breakup|love|dating|people/i.test(t)) {
+          return pick([
+            `💙 Strong relationships are the #1 predictor of happiness and longevity — bigger than diet, exercise, or wealth. Invest in them like you invest in your health. Call someone you care about today.`,
+            `🤝 Most conflicts come from people talking AT each other instead of TO each other. Try this: listen fully, then reflect back what they said before responding. It changes the whole dynamic.`,
+            `🌟 Loneliness is an epidemic right now. Even small interactions help — say hi to a barista, text an old friend. Connection compounds just like habits do. One reach-out today.`,
+          ]);
+        }
+
+        // ── FINANCE & MONEY ───────────────────────────────────────────────────
+        if (/money|financ|budget|sav|invest|debt|spend|afford|expensive|cheap|rich|wealth|income|salary|stock|crypto/i.test(t)) {
+          return pick([
+            `💰 Personal finance in 3 rules: spend less than you earn, save 20% of income, invest the rest in low-cost index funds. Everything else is noise. Simple, not easy.`,
+            `📊 Financial stress is one of the biggest drivers of poor health outcomes. If money is stressing you right now, that's valid. Start with one small win — track what you spend for just one week.`,
+            `🎯 I'm built for health and productivity, not financial advice — but I will say: your wellbeing and your bank account are connected. Less stress → better decisions → better outcomes in everything.`,
+          ]);
+        }
+
+        // ── GENERAL KNOWLEDGE ─────────────────────────────────────────────────
+        if (/what is|what are|how does|why does|who is|where is|when did|explain|tell me about|define|meaning of|difference between/i.test(t)) {
+          return pick([
+            `🤔 That's outside my wellness expertise — I'm specialised in health, habits, sleep, fitness, and productivity. For general knowledge questions, Google or Wikipedia will serve you better! But ask me anything health-related and I'm all yours. 🪐`,
+            `📚 Good question! I focus on your health and productivity data — I might not have the answer to that one. For factual questions, try a search engine. For anything about your wellbeing, stress, sleep, or fitness — I'm your person. 💙`,
+          ]);
+        }
+
+        // ── COMPLIMENTS TO AI ────────────────────────────────────────────────
+        if (/you('re| are) (good|great|amazing|awesome|helpful|smart|cool)|thanks|thank you|love you|nice|well done/i.test(t)) {
+          return pick([
+            `🪐 That means a lot, ${name}! Now let's use that good energy — what are we working on today?`,
+            `😊 Thank you! I'm only as good as the data you give me. Keep logging your meals, habits, and mood and I'll keep getting smarter about your patterns. What's next?`,
+            `💙 Appreciate it! Your ${state.streak}-day streak is way more impressive than anything I do. Keep showing up.`,
+          ]);
+        }
+
+        // ── GOAL SETTING ──────────────────────────────────────────────────────
+        if (/goal|target|aim|achieve|dream|vision|success|ambition|want to be|want to become/i.test(t)) {
+          return pick([
+            `🎯 Goals without systems are just wishes. Your goal: "${state.user?.goal || "not set yet"}". Break it into weekly habits — that's what the Habits tab is for. What's one small action you can take TODAY toward it?`,
+            `🚀 The best goal system: set the outcome (what you want), design the process (daily habits), and track the inputs (not the outputs). You can't control results, only actions. What habit would move you toward your goal?`,
+            `🌟 ${name}, your goal is in the Progress tab. Let's reverse-engineer it — what would need to be true in 30 days for you to be on track? Tell me and I'll help you build a plan.`,
+          ]);
+        }
+
+        // ── WATER / HYDRATION SCIENCE ─────────────────────────────────────────
+        if (/how much water|dehydrat|hydrat.*tip|thirst|urine|pee|drink.*day/i.test(t)) {
+          return pick([
+            `💧 General guideline: 8 glasses (2L) per day — more if you exercise or it's hot. Your goal is set to ${state.waterGoal} glasses. You're at ${state.water} right now. Thirst is already a sign of mild dehydration — don't wait for it.`,
+            `🌊 Signs you're dehydrated: headache, fatigue, brain fog, dark urine. Simple fix — drink a glass now. Want me to log one for you? Just say "log water".`,
+          ]);
+        }
+
+        // ── TIME & DATE ───────────────────────────────────────────────────────
+        if (/what time|what('s| is) (today|the date|the day)|what day|current time/i.test(t)) {
+          const now = new Date();
+          return `🕐 It's ${now.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})} on ${now.toLocaleDateString([],{weekday:"long",month:"long",day:"numeric"})}. You're on a ${state.streak}-day streak — make today count, ${name}! 🪐`;
+        }
+
+        // ── APP HELP ──────────────────────────────────────────────────────────
+        if (/how (do i|to|can i)|what can you do|help|feature|guide|tutorial|show me|how does.*work/i.test(t)) {
+          return `🪐 Here's what I can do for you, ${name}:\n\n• **Log meals** — "I ate chicken and rice"\n• **Add tasks** — "Add task: finish report"\n• **Track water** — "I drank a glass of water"\n• **Log mood** — "I'm feeling great today"\n• **Log stress** — "I'm really stressed"\n• **Plan your day** — "Plan my day"\n• **Check your score** — "How's my score?"\n• **Motivation** — "I need motivation"\n• **Fitness & sleep advice** — just ask!\n\nTry any of these! 💙`;
+        }
+
+        // ── GENERAL FALLBACK — varied, never the same ─────────────────────────
         return pick([
-          `Got it, ${name}. Tell me more — or try: "add task", "I ate...", "plan my day", "I'm stressed", or "how's my score". I'm here to actually help. 🪐`,
-          `I'm listening! You can ask me to log meals, add tasks, track your mood, plan your day, or just talk. What do you need? 💙`,
-          `Hmm, let me think on that. Try being more specific — like "log my breakfast" or "I'm feeling anxious today". I'll act on it right away. ⚡`,
-          `Your Orbit Score is ${state.lifeScore} right now. Want to push it higher? Tell me what you ate, how you feel, or what tasks you need to do. 🚀`,
+          `Got it, ${name}. I'm best at health, fitness, sleep, nutrition, productivity, and acting on your Orbit data. Ask me something in those areas and I'll give you a real answer — or tell me what you ate, how you feel, or what you need to do. 🪐`,
+          `Hmm, I want to give you a great answer! Try asking about sleep, nutrition, fitness, stress, or say things like "I ate...", "I'm feeling...", "add task...", "plan my day". I'll act on it instantly. ⚡`,
+          `${name}, your Orbit Score is ${state.lifeScore}/100 right now. Want to push it up? Tell me what you ate, log a habit, or share how you're feeling and I'll make it count. 🚀`,
+          `I'm tuned for wellness and productivity — health, habits, sleep, fitness, nutrition, mindset. Ask me anything in those areas. For general knowledge, a search engine will serve you better, but for YOUR life? I've got you. 💙`,
         ]);
       };
 
