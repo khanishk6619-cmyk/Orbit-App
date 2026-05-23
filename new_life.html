@@ -679,7 +679,7 @@
       const _greet = _h < 12 ? "Good morning" : _h < 17 ? "Good afternoon" : "Good evening";
       const _greetEmoji = _h < 12 ? "🌅" : _h < 17 ? "☀️" : "🌙";
       const [messages, setMessages] = useState([
-        { role: "ai", text: `${_greet}, ${state.user?.name || "friend"}! ${_greetEmoji} Ready to make today count? Tap the mic and tell me how you're feeling, what you want to get done, and anything else on your mind.` }
+        { role: "ai", text: `${_greet}, ${state.user?.name || "friend"}! ${_greetEmoji} I'm your Orbit AI — I can log meals, add tasks, track your mood, plan your day, and more. Just tell me what you need.` }
       ]);
       const [inputText, setInputText] = useState("");
       const [loading, setLoading] = useState(false);
@@ -690,13 +690,172 @@
 
       useEffect(() => { chatRef.current?.scrollTo(0, chatRef.current.scrollHeight); }, [messages]);
 
-      const sendMessage = async (text) => {
-        if (!text.trim()) return;
-        const userMsg = { role: "user", text };
+      // ── Smart local AI — understands intent and actually acts on state ─────────
+      const smartReply = (raw) => {
+        const t = raw.toLowerCase();
+        const name = state.user?.name || "friend";
+        const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+        // ── LOG MEAL ──────────────────────────────────────────────────────────
+        const mealKw = ["ate","eating","had","eaten","breakfast","lunch","dinner","snack","food","meal","calories","log meal","drink","drank","coffee","tea","smoothie","pizza","burger","salad","rice","pasta","chicken","egg","toast","fruit","yogurt","shake"];
+        if (mealKw.some(k => t.includes(k))) {
+          const food = raw.replace(/^(i (just |))(ate|had|eaten|drink|drank)/i,"").replace(/^log(ged)?\s*/i,"").replace(/meal:?\s*/i,"").trim() || "your meal";
+          const estCals = Math.round(200 + Math.random()*400);
+          state.setMeals(prev => [...prev, { id:Date.now(), name:food, calories:estCals, macros:{p:Math.round(estCals*0.2/4),c:Math.round(estCals*0.5/4),f:Math.round(estCals*0.3/9)}, quality:"mixed", time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}) }]);
+          const newTotal = state.meals.reduce((s,m)=>s+m.calories,0) + estCals;
+          return `🍽️ Logged **${food}** (~${estCals} kcal). You're at ${newTotal} / ${state.calorieGoal} kcal today. ${newTotal > state.calorieGoal ? "You've hit your goal — nice!" : `${state.calorieGoal - newTotal} kcal remaining.`}`;
+        }
+
+        // ── ADD TASK ──────────────────────────────────────────────────────────
+        if (/add (a |)(task|todo|reminder)|remind me (to|about)|i need to |i have to |i should /i.test(raw)) {
+          const taskText = raw.replace(/add (a |)(task|todo|reminder):?\s*/i,"").replace(/remind me (to|about)\s*/i,"").replace(/i (need|have|should) to\s*/i,"").trim() || "New task";
+          state.setTasks(prev => [...prev, { id:Date.now(), text:taskText, done:false, priority:"medium", time:"30 min" }]);
+          return `✅ Added "${taskText}" to your tasks! You now have ${state.tasks.length + 1} task${state.tasks.length !== 0 ? "s" : ""}. Tap Tasks to manage them.`;
+        }
+
+        // ── WATER ─────────────────────────────────────────────────────────────
+        if (/water|glass|hydrat|drink/i.test(t) && !/alcohol|beer|wine/i.test(t)) {
+          const newWater = Math.min(state.water + 1, state.waterGoal + 2);
+          state.setWater(newWater);
+          return `💧 Logged a glass! You're at ${newWater}/${state.waterGoal} glasses today. ${newWater >= state.waterGoal ? "Goal reached — you're crushing it! 🏆" : `${state.waterGoal - newWater} more to hit your goal.`}`;
+        }
+
+        // ── MOOD ──────────────────────────────────────────────────────────────
+        if (/i('m| am| feel) (great|amazing|fantastic|happy|excellent|good|wonderful)/i.test(raw)) {
+          state.setTodayMood(85); state.setMoodLog(prev => { const n=[...prev]; n[n.length-1]=85; return n; });
+          return pick([`That's what I love to hear, ${name}! 😄 Keep that energy — you're in perfect orbit today.`, `${name}, a great mood is your superpower. Your score just went up. Keep riding that wave! 🌊`]);
+        }
+        if (/i('m| am| feel) (okay|alright|fine|meh|so-so|average)/i.test(raw)) {
+          state.setTodayMood(55); state.setMoodLog(prev => { const n=[...prev]; n[n.length-1]=55; return n; });
+          return pick([`Got it — "okay" is totally valid. 💙 Small wins build momentum. What's one thing you can knock out in the next 30 minutes?`, `Okay days become great days with a little push. You've got ${state.habitsDone}/${state.habits.length} habits done — keep going, ${name}!`]);
+        }
+        if (/stress|anxious|overwhelm|anxiety|panic|worry|worried|nervous/i.test(t)) {
+          state.setTodayStress(8); state.setStressLog(prev => { const n=[...prev]; n[n.length-1]=8; return n; });
+          return `💙 Stress logged. Take a slow breath right now — 4 counts in, hold 4, out 8. Seriously, try it. Then head to Health → Stress for a guided session. You've handled hard things before, ${name}. This is no different.`;
+        }
+        if (/sad|depress|down|low|unhappy|awful|terrible|horrible|exhausted|burnt out/i.test(t)) {
+          state.setTodayMood(25); state.setMoodLog(prev => { const n=[...prev]; n[n.length-1]=25; return n; });
+          return `I hear you, ${name}. 🤍 Mood logged. Sometimes the bravest thing is just showing up — and you did. If things feel heavy, journaling can help. Want me to open the journal for you?`;
+        }
+        if (/happy|excited|pumped|motivated|energized|energised|fantastic|on fire/i.test(t)) {
+          state.setTodayMood(90); state.setMoodLog(prev => { const n=[...prev]; n[n.length-1]=90; return n; });
+          return `🔥 YES! That energy is logged. ${state.streak > 0 ? `${state.streak}-day streak + this mood = unstoppable.` : "Use this energy to start your first habit!"} What do you want to crush first today?`;
+        }
+
+        // ── PLAN MY DAY ───────────────────────────────────────────────────────
+        if (/plan (my |)(day|today|morning|evening)|what should i do|my schedule|daily plan/i.test(t)) {
+          const remaining = state.tasks.filter(tk=>!tk.done);
+          const habitsLeft = state.habits.filter(h=>!h.done);
+          const calLeft = state.calorieGoal - state.meals.reduce((s,m)=>s+m.calories,0);
+          return `📋 Your Orbit for today, ${name}:\n\n${remaining.length ? `• ${remaining.length} task${remaining.length>1?"s":""} open: "${remaining[0].text}"${remaining.length>1?` +${remaining.length-1} more`:""}` : "• All tasks done! 🎉"}\n${habitsLeft.length ? `• ${habitsLeft.length} habit${habitsLeft.length>1?"s":""} to go: ${habitsLeft.slice(0,2).map(h=>h.name).join(", ")}` : "• All habits done! 🔥"}\n• Water: ${state.water}/${state.waterGoal} glasses\n• Calories: ~${calLeft > 0 ? calLeft+" kcal left" : "goal hit!"}\n\nTackle your hardest task first. 💪`;
+        }
+
+        // ── SCORE / PROGRESS ──────────────────────────────────────────────────
+        if (/score|how am i|my progress|orbit score|life score|doing today|stats/i.test(t)) {
+          return `🪐 Your Orbit Score: **${state.lifeScore}/100** ${state.lifeScore>=80?"🌟 Excellent!":state.lifeScore>=60?"💙 Good":"💪 Building"}.\n\nStreak: ${state.streak} days • Habits: ${state.habitsDone}/${state.habits.length} • Water: ${state.water}/${state.waterGoal} • Tasks: ${state.tasksDone}/${state.tasks.length}\n\n${state.lifeScore < 70 ? "Log more habits and water to push your score up!" : "You're killing it — keep the momentum going!"}`;
+        }
+
+        // ── MOTIVATION ────────────────────────────────────────────────────────
+        if (/motivat|inspire|push me|encourage|believe|i can't|i give up|hard|difficult/i.test(t)) {
+          return pick([
+            `${name}, you've opened this app ${state.streak} day${state.streak!==1?"s":""} in a row. That's not motivation — that's discipline. 🔥 Motivation fades. Your habit doesn't.`,
+            `Every score starts at zero. You're at ${state.lifeScore} today. You built that. 🪐 One action at a time — what's next?`,
+            `The hardest part is starting. You already did that by opening Orbit. Now pick ONE thing and do it. Just one. 💪`,
+            `You don't need to feel like it to do it. Do it, and then you'll feel like it. That's the trick, ${name}. 🌟`,
+          ]);
+        }
+
+        // ── SLEEP ─────────────────────────────────────────────────────────────
+        if (/sleep|tired|fatigue|rest|insomnia|cant sleep|can't sleep|wake up|bed/i.test(t)) {
+          const lastSleep = state.sleepLogs[0];
+          return `😴 ${lastSleep ? `Last logged sleep: ${lastSleep.duration}h (quality ${lastSleep.quality}/5).` : "No sleep logged yet."} Head to the Sleep tab to log tonight. Aim for 7–9 hours — it's the #1 thing you can do for your score.`;
+        }
+
+        // ── WORKOUT / EXERCISE ────────────────────────────────────────────────
+        if (/workout|exercise|gym|run|lift|yoga|train|jog|swim|bike|cycle|walk/i.test(t)) {
+          return pick([
+            `💪 Love it! Head to the Workout tab to log it — I'll count the calories toward your daily burn. What did you do?`,
+            `Movement is medicine. Log your workout in the Workout tab and watch your score climb. Every session counts, ${name}! 🏋️`,
+          ]);
+        }
+
+        // ── HABIT ─────────────────────────────────────────────────────────────
+        if (/habit|routine|streak|daily/i.test(t)) {
+          const doneH = state.habits.filter(h=>h.done);
+          const leftH = state.habits.filter(h=>!h.done);
+          return `⚡ Habits: ${doneH.length} done${doneH.length ? ` (${doneH.map(h=>h.name).slice(0,2).join(", ")})` : ""}, ${leftH.length} remaining${leftH.length ? ` (${leftH.slice(0,2).map(h=>h.name).join(", ")})` : ""}. ${state.streak}-day streak! Head to Tasks → Habits to check them off.`;
+        }
+
+        // ── GRATITUDE / JOURNAL ───────────────────────────────────────────────
+        if (/grateful|gratitude|thankful|journal|write|reflect|thoughts/i.test(t)) {
+          return `📓 Journaling is the highest-ROI thing you can do for your mental health. Go to the Journal tab — write 3 things you're grateful for right now. Even tiny ones count, ${name}. 🤍`;
+        }
+
+        // ── GREETING ──────────────────────────────────────────────────────────
+        if (/^(hi|hey|hello|sup|yo|what'?s up|hiya|howdy)/i.test(t)) {
+          return pick([
+            `Hey ${name}! 🪐 Ready to get things done? You can say things like "I ate a salad", "add task: call mum", "plan my day", or "I'm feeling stressed" — I'll handle the rest.`,
+            `Hey! Your score is ${state.lifeScore}/100 today. ${state.habitsDone}/${state.habits.length} habits done. What are we working on?`,
+            `Hi ${name}! ${state.streak > 0 ? `${state.streak}-day streak — let's keep it going.` : "Fresh start — let's build your first streak!"} What do you need?`,
+          ]);
+        }
+
+        // ── GENERAL FALLBACK — different every time ────────────────────────────
+        return pick([
+          `Got it, ${name}. Tell me more — or try: "add task", "I ate...", "plan my day", "I'm stressed", or "how's my score". I'm here to actually help. 🪐`,
+          `I'm listening! You can ask me to log meals, add tasks, track your mood, plan your day, or just talk. What do you need? 💙`,
+          `Hmm, let me think on that. Try being more specific — like "log my breakfast" or "I'm feeling anxious today". I'll act on it right away. ⚡`,
+          `Your Orbit Score is ${state.lifeScore} right now. Want to push it higher? Tell me what you ate, how you feel, or what tasks you need to do. 🚀`,
+        ]);
+      };
+
+      const buildSystemPrompt = () => {
+        const now = new Date();
+        const remaining = state.tasks.filter(t => !t.done);
+        const habitsLeft = state.habits.filter(h => !h.done);
+        return `You are Orbit AI, a warm, smart life coach inside the Orbit wellness app. Today is ${now.toDateString()}, ${now.toLocaleTimeString()}.
+
+USER CONTEXT:
+- Name: ${state.user?.name || "User"}
+- Orbit Score: ${state.lifeScore}/100
+- Streak: ${state.streak} days
+- Mood today: ${state.todayMood !== null ? state.todayMood+"/100" : "not logged"}
+- Stress today: ${state.todayStress !== null ? state.todayStress+"/10" : "not logged"}
+- Water: ${state.water}/${state.waterGoal} glasses
+- Calories: ${state.meals.reduce((s,m)=>s+m.calories,0)}/${state.calorieGoal} kcal
+- Tasks remaining: ${remaining.length} (${remaining.slice(0,3).map(t=>t.text).join(", ")})
+- Habits left: ${habitsLeft.length} (${habitsLeft.slice(0,3).map(h=>h.name).join(", ")})
+- Last sleep: ${state.sleepLogs[0] ? state.sleepLogs[0].duration+"h quality "+state.sleepLogs[0].quality+"/5" : "not logged"}
+- Recent meals: ${state.meals.slice(0,3).map(m=>m.name+"("+m.calories+"kcal)").join(", ") || "none logged"}
+
+RULES:
+- Be direct, warm, and personal. Use their name.
+- Always be specific — reference their real data above, not generic advice.
+- Keep responses under 4 sentences unless listing their day plan.
+- When they mention eating, suggest logging it. When they mention a task, offer to help prioritise.
+- Use emojis naturally but sparingly.
+- Never give the same response twice in a conversation.`;
+      };
+
+      const sendMessage = async (raw) => {
+        if (!raw.trim()) return;
+        const userMsg = { role: "user", text: raw };
         const newMsgs = [...messages, userMsg];
         setMessages(newMsgs);
         setInputText("");
         setLoading(true);
+
+        // No API key — use smart local AI
+        if (!ANTHROPIC_API_KEY) {
+          const reply = smartReply(raw);
+          setTimeout(() => {
+            setMessages(prev => [...prev, { role: "ai", text: reply }]);
+            setLoading(false);
+          }, 600 + Math.random() * 500);
+          return;
+        }
+
+        // Real API call with full context
         try {
           const res = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
@@ -708,16 +867,17 @@
             },
             body: JSON.stringify({
               model: "claude-sonnet-4-6",
-              max_tokens: 1000,
-              system: `You are a warm, empathetic AI life coach inside a health & productivity app. The user's name is ${state.user?.name || "friend"}. Keep responses concise (2-4 sentences), warm, and action-oriented. Use emojis sparingly but naturally.`,
+              max_tokens: 400,
+              system: buildSystemPrompt(),
               messages: newMsgs.map(m => ({ role: m.role === "ai" ? "assistant" : "user", content: m.text }))
             })
           });
           const data = await res.json();
-          const reply = data.content?.[0]?.text || "I'm here with you. Tell me more 💙";
-          setMessages(prev => [...prev, { role: "ai", text: reply }]);
+          const reply = data.content?.[0]?.text;
+          if (reply) { setMessages(prev => [...prev, { role: "ai", text: reply }]); }
+          else { setMessages(prev => [...prev, { role: "ai", text: smartReply(raw) }]); }
         } catch {
-          setMessages(prev => [...prev, { role: "ai", text: "I'm here with you. What's on your mind? 💙" }]);
+          setMessages(prev => [...prev, { role: "ai", text: smartReply(raw) }]);
         }
         setLoading(false);
       };
@@ -1168,7 +1328,36 @@
               );
             })()}
 
-            {tab === "body" && (
+            {tab === "body" && (() => {
+              const noDevice = !state.user?.device || state.user.device === "No, I don't have one";
+              if (noDevice) return (
+                <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
+                  <Card style={{ textAlign:"center",padding:"28px 20px",background:"rgba(255,140,66,0.04)",borderColor:"rgba(255,140,66,0.2)" }}>
+                    <div style={{ fontSize:48,marginBottom:12 }}>💪</div>
+                    <div style={{ fontFamily:"'Syne',sans-serif",fontSize:16,fontWeight:800,color:C.text,marginBottom:8 }}>Body Metrics Locked</div>
+                    <div style={{ fontSize:13,color:C.textMuted,lineHeight:1.6,marginBottom:20 }}>Resting heart rate, HRV, and body metrics sync from your wearable device. Connect one to unlock.</div>
+                    <button className="btn-press" onClick={() => state.setActiveTab("sleep")}
+                      style={{ background:C.grad,border:"none",borderRadius:12,padding:"12px 24px",color:"#fff",fontSize:13,fontFamily:"'Syne',sans-serif",fontWeight:700,cursor:"pointer" }}>
+                      Set Up Device →
+                    </button>
+                  </Card>
+                  <Card>
+                    <div className="section-title">Water Intake</div>
+                    <div style={{ textAlign:"center",fontFamily:"'Syne',sans-serif",fontSize:42,fontWeight:800,color:C.blue,marginBottom:8 }}>{state.water} <span style={{ fontSize:16,color:C.textMuted,fontWeight:400 }}>/ {state.waterGoal} glasses</span></div>
+                    <ProgressBar value={state.water} max={state.waterGoal} color={C.blue} height={10} />
+                    <div style={{ display:"flex",gap:8,marginTop:14,justifyContent:"center",flexWrap:"wrap" }}>
+                      {Array.from({ length:state.waterGoal }, (_,i) => i+1).map(n => (
+                        <div key={n} style={{ width:28,height:28,borderRadius:"50%",background:n<=state.water?C.blue:"rgba(91,141,239,0.1)",border:`1.5px solid ${n<=state.water?C.blue:"rgba(91,141,239,0.2)"}`,cursor:"pointer",transition:"all 0.2s",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12 }}
+                          onClick={() => state.setWater(n)}>
+                          {n<=state.water?"💧":""}
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                  <GradBtn grad={C.gradGreen} onClick={() => state.setActiveTab("workout")}>Log a Workout →</GradBtn>
+                </div>
+              );
+              return (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <Card>
                   <div className="section-title">Log Today's Workout</div>
@@ -1202,7 +1391,8 @@
                   <GradBtn style={{ marginTop: 4 }} onClick={() => {}} disabled>Update Metrics (coming soon)</GradBtn>
                 </Card>
               </div>
-            )}
+              );
+            })()}
           </div>
         </Screen>
       );
