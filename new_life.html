@@ -305,9 +305,23 @@
       const q = ONBOARDING_QUESTIONS[step];
       const progress = step / ONBOARDING_QUESTIONS.length;
 
+      // Pre-fill name from URL ?name= param on first load
+      useEffect(() => {
+        const urlName = new URLSearchParams(window.location.search).get("name");
+        if (urlName && urlName.trim()) setVal(urlName.trim());
+      }, []);
+
       useEffect(() => {
         const saved = answers[q.id];
-        if (q.type === "text" || q.type === "number" || q.type === "textarea") setVal(saved || "");
+        if (q.type === "text" || q.type === "number" || q.type === "textarea") {
+          // On step 0 (name), keep URL-prefilled value if not yet answered
+          if (q.id === "name") {
+            const urlName = new URLSearchParams(window.location.search).get("name");
+            setVal(saved || (urlName ? urlName.trim() : ""));
+          } else {
+            setVal(saved || "");
+          }
+        }
         else if (q.type === "slider") setSliderVal(saved || q.def);
         else if (q.type === "multi") setMultiVal(saved || []);
         else if (q.type === "time") setTimeVal(saved || q.def);
