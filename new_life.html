@@ -186,14 +186,24 @@
     };
 
     // ─── APP STATE ────────────────────────────────────────────────────────────
-    // ── localStorage helpers ──────────────────────────────────────────────────
+    // ── localStorage helpers (keys prefixed orbit_) ───────────────────────────
+    // Migrate any old nl_ data from previous "New Life" branding on first run
+    (() => {
+      try {
+        if (!localStorage.getItem('orbit_data') && localStorage.getItem('nl_data')) {
+          localStorage.setItem('orbit_data', localStorage.getItem('nl_data'));
+          localStorage.setItem('orbit_onboarded', localStorage.getItem('nl_onboarded') || '');
+          localStorage.setItem('orbit_lastOpen', localStorage.getItem('nl_lastOpen') || '');
+        }
+      } catch {}
+    })();
     const nlGet = (key, fallback) => {
-      try { const v = localStorage.getItem('nl_' + key); return v !== null ? JSON.parse(v) : fallback; }
+      try { const v = localStorage.getItem('orbit_' + key); return v !== null ? JSON.parse(v) : fallback; }
       catch { return fallback; }
     };
-    const nlSet = (key, val) => { try { localStorage.setItem('nl_' + key, JSON.stringify(val)); } catch {} };
-    const nlSave = (state) => { try { localStorage.setItem('nl_data', JSON.stringify(state)); } catch {} };
-    const nlLoad = () => { try { return JSON.parse(localStorage.getItem('nl_data') || 'null'); } catch { return null; } };
+    const nlSet = (key, val) => { try { localStorage.setItem('orbit_' + key, JSON.stringify(val)); } catch {} };
+    const nlSave = (state) => { try { localStorage.setItem('orbit_data', JSON.stringify(state)); } catch {} };
+    const nlLoad = () => { try { return JSON.parse(localStorage.getItem('orbit_data') || 'null'); } catch { return null; } };
 
     const useAppState = () => {
       const _saved = React.useMemo(() => nlLoad() || {}, []);
@@ -499,7 +509,7 @@
           <div style={{ width: "100%", maxWidth: 400 }}>
             <GradBtn onClick={onStart} style={{ fontSize: 17, padding: "18px", animation: "pulse 2s ease-in-out infinite" }}>Let's Go, {answers.name}! →</GradBtn>
           </div>
-          <p style={{ fontSize: 12, color: C.textDim }}>Your journey starts right now. One day at a time. 🌱</p>
+          <p style={{ fontSize: 12, color: C.textDim }}>Your orbit starts right now. One day at a time. 🪐</p>
         </div>
       );
     }
@@ -508,7 +518,7 @@
     function HomeScreen({ state }) {
       const { user, streak, lifeScore, totalCalories, calorieGoal, waterGoal, tasksDone, tasks, water, habitsDone, habits, moodLog, notifications, todayStress, stressLog } = state;
       const hour = new Date().getHours();
-      const prevScore = (() => { try { const v = localStorage.getItem('nl_prevLifeScore'); return v !== null ? parseInt(v, 10) : null; } catch { return null; } })();
+      const prevScore = (() => { try { const v = localStorage.getItem('orbit_prevLifeScore'); return v !== null ? parseInt(v, 10) : null; } catch { return null; } })();
       const scoreDelta = prevScore !== null ? lifeScore - prevScore : null;
       const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
       const greetEmoji = hour < 12 ? "🌅" : hour < 17 ? "☀️" : "🌙";
@@ -1385,7 +1395,7 @@
               const completionPct = state.tasks.length ? Math.round((state.tasksDone / state.tasks.length) * 100) : 0;
               const avgSleepW = state.sleepLogs.length ? Math.round(state.sleepLogs.slice(0,7).reduce((s,l)=>s+l.duration,0)/Math.min(7,state.sleepLogs.length)*10)/10 : 0;
               const avgStressW = state.stressLog.length ? Math.round(state.stressLog.reduce((a,b)=>a+b,0)/state.stressLog.length*10)/10 : 5;
-              const recapMsg = state.streak > 14 ? `🔥 Incredible — ${state.streak}-day streak! You're unstoppable.` : state.streak > 7 ? `🌟 Amazing — ${state.streak}-day streak! Keep building.` : state.streak > 3 ? `💪 Great — ${state.streak}-day streak going strong!` : state.streak > 0 ? `You're on a ${state.streak}-day streak. Every day counts! 🌱` : "Start your journey — one habit at a time. 🌱";
+              const recapMsg = state.streak > 14 ? `🔥 Incredible — ${state.streak}-day streak! You're unstoppable.` : state.streak > 7 ? `🌟 Amazing — ${state.streak}-day streak! Keep building.` : state.streak > 3 ? `💪 Great — ${state.streak}-day streak going strong!` : state.streak > 0 ? `You're in orbit — ${state.streak}-day streak! Every day counts! 🪐` : "Launch your orbit — one habit at a time. 🪐";
               return (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <Card style={{ background: "rgba(78,203,141,0.05)", borderColor: "rgba(78,203,141,0.2)" }}>
@@ -1675,7 +1685,7 @@
                 </div>
               </div>
               <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginTop: 4, fontSize: 13, color: C.textMuted, textAlign: "center" }}>
-                {state.streak > 1 ? `You've been on a ${state.streak}-day streak. Look how far you've come 🌟` : "Day 1 of your journey. Every great story starts here 🌱"}
+                {state.streak > 1 ? `You've been on a ${state.streak}-day streak. Look how far you've come 🌟` : "Day 1 of your orbit. Every great story starts here 🪐"}
               </div>
             </Card>
             <Card style={{ marginBottom: 14 }}>
@@ -1728,7 +1738,7 @@
                   { emoji: "🎯", text: state.user?.goal || "Define your #1 goal in Settings" },
                   { emoji: "💪", text: `Currently ${state.user?.fitness || "active"} — push further` },
                   { emoji: "🧘", text: "Meditate daily for 30 days" },
-                  { emoji: "🌱", text: `Eat ${state.user?.diet === "Healthy" ? "healthy every day" : "healthier every week"}` },
+                  { emoji: "🥗", text: `Eat ${state.user?.diet === "Healthy" ? "healthy every day" : "healthier every week"}` },
                 ].map((v, i) => (
                   <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <span style={{ fontSize: 20 }}>{v.emoji}</span>
@@ -2185,7 +2195,7 @@
       const [saved,    setSaved]    = useState(false);
       const [syncing,  setSyncing]  = useState(false);
       const [lastSync, setLastSync] = useState(() => {
-        try { return localStorage.getItem('nl_lastSync') || null; } catch { return null; }
+        try { return localStorage.getItem('orbit_lastSync') || null; } catch { return null; }
       });
 
       const hasDevice = state.user?.device && state.user.device !== "No, I don't have one";
@@ -2256,7 +2266,7 @@
         setTimeout(() => {
           const now = new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
           setLastSync(now);
-          try { localStorage.setItem('nl_lastSync', now); } catch {}
+          try { localStorage.setItem('orbit_lastSync', now); } catch {}
           setSyncing(false);
         }, 1800);
       };
@@ -2557,12 +2567,12 @@
 
     // ─── MAIN APP ─────────────────────────────────────────────────────────────
     function App() {
-      const [onboarded, setOnboarded] = useState(() => !!localStorage.getItem('nl_onboarded'));
+      const [onboarded, setOnboarded] = useState(() => !!localStorage.getItem('orbit_onboarded'));
       const state = useAppState();
 
       const handleOnboardComplete = (answers) => {
         state.setUser(answers);
-        localStorage.setItem('nl_onboarded', '1');
+        localStorage.setItem('orbit_onboarded', '1');
         // increment streak on first open
         state.setStreak(1);
         setOnboarded(true);
@@ -2572,10 +2582,10 @@
       useEffect(() => {
         if (!onboarded) return;
         const today = new Date().toDateString();
-        const lastOpen = localStorage.getItem('nl_lastOpen');
+        const lastOpen = localStorage.getItem('orbit_lastOpen');
         if (lastOpen && lastOpen !== today) {
           // Save today's score before resetting so HomeScreen can show the delta tomorrow
-          try { localStorage.setItem('nl_prevLifeScore', String(state.lifeScore)); } catch {}
+          try { localStorage.setItem('orbit_prevLifeScore', String(state.lifeScore)); } catch {}
           // It's a new day — reset daily fields
           state.setHabits(prev => prev.map(h => ({ ...h, done: false })));
           state.setWater(0);
@@ -2594,7 +2604,7 @@
             state.setStreak(1); // gap → reset
           }
         }
-        localStorage.setItem('nl_lastOpen', today);
+        localStorage.setItem('orbit_lastOpen', today);
       }, [onboarded]);
 
       if (!onboarded) return <OnboardingFlow onComplete={handleOnboardComplete} />;
